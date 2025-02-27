@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Key</title>
+    <style>
+        body {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            color: #1abc9c;
+        }
+        .key {
+            background-color: #1abc9c;
+            color: #2c3e50;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .warning {
+            color: #e74c3c;
+        }
+        .continue-button {
+            background-color: #1abc9c;
+            color: #ecf0f1;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .continue-button:hover {
+            background-color: #16a085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Key</h1>
+        <div class="key" onclick="copyKey()">{{ key }}</div>
+        <p class="warning">Do not share this key with anyone!</p>
+        <button class="continue-button" onclick="continueToNext()">Continue</button>
+    </div>
+    <script>
+        function copyKey() {
+            const keyElement = document.querySelector('.key');
+            const key = keyElement.textContent;
+            navigator.clipboard.writeText(key).then(() => {
+                alert('Key copied to clipboard!');
+            });
+        }
+
+        function continueToNext() {
+            const nextUrl = "{{ next_url }}";
+            window.location.href = nextUrl;
+        }
+    </script>
+</body>
+</html>

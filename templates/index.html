@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoGarbage Leaderboard</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #1abc9c;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            background: #16a085;
+            padding: 10px 0;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 1.1em;
+            transition: color 0.3s;
+        }
+        nav a:hover {
+            color: #1abc9c;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .leaderboard {
+            width: 80%;
+            margin: 20px 0;
+            padding: 20px;
+            background: #34495e;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .leaderboard h2 {
+            margin-top: 0;
+            color: #1abc9c;
+        }
+        .leaderboard table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .leaderboard table, th, td {
+            border: 1px solid #ddd;
+        }
+        .leaderboard th, .leaderboard td {
+            padding: 12px;
+            text-align: left;
+        }
+        .leaderboard th {
+            background-color: #2c3e50;
+        }
+        .links {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .links a {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+            background-color: #1abc9c;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .links a:hover {
+            background-color: #16a085;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GoGarbage Leaderboard</h1>
+    </header>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/capture-image">Report</a>
+        <a href="/redeem">Redeem</a>
+    </nav>
+    <div class="container">
+        <div class="leaderboard">
+            <h2>Top Participants</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- Leaderboard data will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        async function fetchLeaderboard() {
+            const response = await fetch('/leaderboard');
+            const data = await response.json();
+            const leaderboardBody = document.getElementById('leaderboard-body');
+            leaderboardBody.innerHTML = '';
+            data.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.Rank}</td>
+                    <td>${entry.Username}</td>
+                    <td>${entry.Score}</td>
+                `;
+                leaderboardBody.appendChild(row);
+            });
+        }
+        fetchLeaderboard();
+    </script>
+</body>
+</html>

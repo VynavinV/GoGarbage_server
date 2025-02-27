@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture Image - GoGarbage</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        header {
+            background: #1abc9c;
+            color: #fff;
+            width: 100%;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .form-container {
+            width: 80%;
+            margin: 20px 0;
+            padding: 20px;
+            background: #34495e;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .form-container h2 {
+            margin-top: 0;
+            color: #1abc9c;
+        }
+        .form-container video {
+            width: 100%;
+            height: auto;
+        }
+        .form-container canvas {
+            display: none;
+        }
+        .form-container button {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #1abc9c;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .form-container button:hover {
+            background-color: #16a085;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #2c3e50;
+            display: none;
+            border-radius: 4px;
+        }
+        .form-container img {
+            width: 100%;
+            height: auto;
+            display: none;
+            margin-top: 20px;
+        }
+        .form-container select, .form-container input[type="checkbox"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .loading-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GoGarbage</h1>
+    </header>
+    <div class="form-container">
+        <h2>Capture Image</h2>
+        <select id="cameraSelect"></select>
+        <video id="video" autoplay></video>
+        <canvas id="canvas"></canvas>
+        <button id="capture">Capture Image</button>
+        <button id="upload" style="display: none;">Upload Image</button>
+        <label for="hazardous">Report as Hazardous</label>
+        <input type="checkbox" id="hazardous" name="hazardous">
+        <div class="result" id="result">
+            <h3>Garbage Amount:</h3>
+            <p id="garbage-amount"></p>
+            <img id="highlighted-image" alt="Highlighted Garbage">
+        </div>
+    </div>
+    <div class="loading-screen" id="loading-screen">
+        Processing, please wait...
+    </div>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const uploadButton = document.getElementById('upload');
+        const resultDiv = document.getElementById('result');
+        const garbageAmountP = document.getElementById('garbage-amount');
+        const highlightedImage = document.getElementById('highlighted-image');
+        const cameraSelect = document.getElementById('cameraSelect');
+
+        // Fallback method to access the camera
+        function startCameraFallback() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error('Error accessing the camera: ', err);
+                });
+        }
+
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            // Get available cameras
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    videoDevices.forEach((device, index) => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Camera ${index + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
+                    if (videoDevices.length > 0) {
+                        startCamera(videoDevices[0].deviceId);
+                    } else {
+                        startCameraFallback();
+                    }
+                })
+                .catch(err => {
+                    console.error('Error enumerating devices: ', err);
+                    startCameraFallback();
+                });
+        } else {
+            console.error('MediaDevices API not supported.');
+            startCameraFallback();
+        }
+
+        // Get access to the selected camera
+        function startCamera(deviceId) {
+            navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } } })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error('Error accessing the camera: ', err);
+                    startCameraFallback();
+                });
+        }
+
+        cameraSelect.addEventListener('change', () => {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            startCamera(cameraSelect.value);
+        });
+
+        // Capture the image
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.style.display = 'block';
+            video.style.display = 'none';
+            captureButton.style.display = 'none';
+            uploadButton.style.display = 'block';
+        });
+
+        let latitude = null;
+        let longitude = null;
+
+        // Fallback method to get geolocation
+        function getGeolocationFallback() {
+            latitude = 'Unknown';
+            longitude = 'Unknown';
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+            }, error => {
+                console.error('Error getting location: ', error);
+                getGeolocationFallback();
+            });
+        } else {
+            console.error('Geolocation is not supported by this browser.');
+            getGeolocationFallback();
+        }
+
+        // Ensure the loading screen is hidden when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loading-screen').style.display = 'none';
+        });
+
+        // Upload the image
+        uploadButton.addEventListener('click', async () => {
+            document.getElementById('loading-screen').style.display = 'flex';
+            const hazardous = document.getElementById('hazardous').checked;
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('image', blob, 'captured-image.png');
+                formData.append('hazardous', hazardous);
+                formData.append('latitude', latitude);
+                formData.append('longitude', longitude);
+
+                try {
+                    const response = await fetch('/upload-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        garbageAmountP.textContent = result.garbage_amount;
+                        highlightedImage.src = result.highlighted_image_url;
+                        highlightedImage.style.display = 'block';
+                        resultDiv.style.display = 'block';
+                    } else {
+                        alert('Failed to upload image.');
+                    }
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    alert('An error occurred while uploading the image.');
+                } finally {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }
+            }, 'image/png');
+        });
+    </script>
+</body>
+</html>
