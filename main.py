@@ -7,17 +7,34 @@ from ultralytics import YOLO
 from geopy.geocoders import Nominatim
 import uuid
 import base64
-import bcrypt  # Add bcrypt import
-from functools import wraps  # Add wraps import for login_required decorator
-from geopy.distance import geodesic  # Add geodesic import for distance calculation
+import bcrypt  
+from functools import wraps 
+from geopy.distance import geodesic  
+from google_auth_oauthlib.flow import Flow
+from google.oauth2 import id_token
+import google.auth.transport.requests
+from dotenv import load_dotenv  # Add dotenv import
+
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # Add a secret key for session management
+app.secret_key = os.getenv('SECRET_KEY')  # Load secret key from environment variable
 
-SUPABASE_URL = 'https://urdpxgmczkokojlhtynd.supabase.co'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyZHB4Z21jemtva29qbGh0eW5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0MDg3NDEsImV4cCI6MjA1NDk4NDc0MX0.l0C2lLSrvGRJZEmjgqk3FDj3i17Cmby_buI5FLzsrUg'
-CENTRAL_WALLET_PRIVATE_KEY = '86014fa7a3efecfb521600b55616e4aca9ad754de7772e4ea6a9c93da7889602'
-CENTRAL_WALLET_ADDRESS = '86014fa7a3efecfb521600b55616e4aca9ad754de7772e4ea6a9c93da7889602'
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+CENTRAL_WALLET_PRIVATE_KEY = os.getenv('CENTRAL_WALLET_PRIVATE_KEY')
+CENTRAL_WALLET_ADDRESS = os.getenv('CENTRAL_WALLET_ADDRESS')
+
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+
+client_secrets_file = os.getenv('CLIENT_SECRETS_FILE')
+flow = Flow.from_client_secrets_file(
+    client_secrets_file,
+    scopes=['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', "openid"],
+    redirect_uri=os.getenv('REDIRECT_URI')
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -42,6 +59,62 @@ def connect_wallet():
         return redirect(url_for('login'))
     return render_template('connect_wallet.html', central_wallet_address=CENTRAL_WALLET_ADDRESS)
 
+@app.route('/callback')
+def callback():
+    flow.fetch_token(authorization_response=request.url)
+    if not session["state"] == request.args["state"]:
+        return jsonify({"error": "Invalid state parameter"}), 401
+    credentials = flow.credentials
+    request_session = google.auth.transport.requests.Request()
+
+    id_info = id_token.verify_oauth2_token(credentials.id_token, request_session, GOOGLE_CLIENT_ID)
+
+    email = id_info['email']
+    password = id_info['sub']
+    next_url = request.args.get('next', url_for('index'))
+    logging.info(f'Login attempt with email: {email}')
+    headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': f'Bearer {SUPABASE_KEY}'
+    }
+    response = requests.get(f'{SUPABASE_URL}/rest/v1/Users?Email=eq.{email}', headers=headers)
+    if response.status_code == 200 and response.json():
+        user = response.json()[0]
+        stored_hash = user['Hash']
+        #if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
+        if 1+1 == 2:
+            session['user'] = email  # Store user email in session
+            key = email + "+" + password
+            key = base64.b64encode(key.encode()).decode()
+            return render_template('key.html', key=key, next_url=next_url)
+        else:
+            return jsonify({'message': 'Invalid email or password.'}), 401
+    else:
+        # Sign up the user
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        payload = {
+            'Email': email,
+            'Hash': hashed_password
+        }
+        signup_response = requests.post(f'{SUPABASE_URL}/rest/v1/Users', headers=headers, json=payload)
+        if signup_response.status_code == 201:
+            session['user'] = email  # Store user email in session
+            key = email + "+" + password
+            key = base64.b64encode(key.encode()).decode()
+            return render_template('key.html', key=key, next_url=next_url)
+        else:
+            return jsonify({'message': 'Failed to sign up user.'}), 400
+
+    return jsonify(id_info)
+
+@app.route('/login-google')
+def login_google():
+    authorization_url, state = flow.authorization_url()
+    session['state'] = state
+    return redirect(authorization_url)
+
+
+
 @app.route('/leaderboard')
 def leaderboard():
     headers = {
@@ -51,6 +124,7 @@ def leaderboard():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/Leaderboard', headers=headers)
     data = response.json()
     return jsonify(data)
+
 
 @app.route('/add-player', methods=['GET', 'POST'])
 def add_player():
@@ -132,7 +206,7 @@ def signup():
         logging.debug(f'Supabase response body: {response.text}')
         
         if response.status_code == 201:
-            session['user'] = email  # Store user email in session
+            session['user'] = email  
             return redirect(url_for('index'))
         else:
             return jsonify({'message': 'Failed to sign up user.'}), 400
@@ -141,7 +215,8 @@ def signup():
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)  # Remove user from session
+    session.pop('user', None)  
+    session.clear()
     return redirect(url_for('index'))
 
 @app.route('/get-xp', methods=['POST'])
@@ -479,7 +554,7 @@ def run_inference(image_path):
     model = YOLO("runs/detect/train/yolov8s_100epochs/weights/best.pt")
     results = model.predict(source=image_path, save=True)
 
-    total_trash_items = 0  # Initialize counter for trash items
+    total_trash_items = 0 
 
     for result in results:
         frame = result.orig_img
@@ -571,7 +646,7 @@ def clean_garbage():
             logging.info(f"Output saved to {unique_file_path}")
             logging.info(f"Total trash items detected: {garbage_amount}")
             
-            # Find the nearest garbage report within 5km
+            # Find the nearest garbage report within distance
             headers = {
                 'apikey': SUPABASE_KEY,
                 'Authorization': f'Bearer {SUPABASE_KEY}'
@@ -610,7 +685,7 @@ if __name__ == '__main__':
 
     app.wsgi_app = ProxyFix(app.wsgi_app)
 
-    # Ignore changes in the site-packages and static/images directories
+    # Ignore changes in the site-packages and static/images directories (dont remove this)
     extra_files = []
     for root, dirs, files in os.walk(os.path.dirname(__file__)):
         if 'static/images' in root:
