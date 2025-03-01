@@ -108,6 +108,7 @@
         <canvas id="canvas"></canvas>
         <button id="capture">Capture Image</button>
         <button id="upload" style="display: none;">Upload Image</button>
+        <button id="switchCamera">Switch Camera</button>
         <label for="hazardous">Report as Hazardous</label>
         <input type="checkbox" id="hazardous" name="hazardous">
         <div class="result" id="result">
@@ -129,6 +130,9 @@
         const highlightedImage = document.getElementById('highlighted-image');
         const cameraSelect = document.getElementById('cameraSelect');
 
+        let currentCameraIndex = 0;
+        let videoDevices = [];
+
         // Fallback method to access the camera
         function startCameraFallback() {
             navigator.mediaDevices.getUserMedia({ video: true })
@@ -144,7 +148,7 @@
             // Get available cameras
             navigator.mediaDevices.enumerateDevices()
                 .then(devices => {
-                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    videoDevices = devices.filter(device => device.kind === 'videoinput');
                     videoDevices.forEach((device, index) => {
                         const option = document.createElement('option');
                         option.value = device.deviceId;
@@ -257,6 +261,11 @@
                     document.getElementById('loading-screen').style.display = 'none';
                 }
             }, 'image/png');
+        });
+
+        document.getElementById('switchCamera').addEventListener('click', () => {
+            currentCameraIndex = (currentCameraIndex + 1) % videoDevices.length;
+            startCamera(videoDevices[currentCameraIndex].deviceId);
         });
     </script>
 </body>

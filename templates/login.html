@@ -46,6 +46,24 @@
         button:hover {
             background-color: #16a085;
         }
+        .google-btn {
+            background-color: #dd4b39;
+            color: #ecf0f1;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .google-btn:hover {
+            background-color: #c23321;
+        }
+        .google-btn img {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -57,6 +75,10 @@
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required><br><br>
         <button type="submit">Login</button>
+        <button type="button" class="google-btn">
+            <img src="https://img.icons8.com/color/16/000000/google-logo.png" alt="Google icon">
+            Login with Google
+        </button>
     </form>
 </body>
 </html>

@@ -14,9 +14,9 @@ from geopy.distance import geodesic  # Add geodesic import for distance calculat
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Add a secret key for session management
 
-SUPABASE_URL = 'https://*********.supabase.co'
-SUPABASE_KEY = '********'
-CENTRAL_WALLET_PRIVATE_KEY = '*********************'
+SUPABASE_URL = 'https://urdpxgmczkokojlhtynd.supabase.co'
+SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyZHB4Z21jemtva29qbGh0eW5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0MDg3NDEsImV4cCI6MjA1NDk4NDc0MX0.l0C2lLSrvGRJZEmjgqk3FDj3i17Cmby_buI5FLzsrUg'
+CENTRAL_WALLET_PRIVATE_KEY = '86014fa7a3efecfb521600b55616e4aca9ad754de7772e4ea6a9c93da7889602'
 CENTRAL_WALLET_ADDRESS = '86014fa7a3efecfb521600b55616e4aca9ad754de7772e4ea6a9c93da7889602'
 
 logging.basicConfig(level=logging.DEBUG)
@@ -464,6 +464,16 @@ def get_coins():
     else:
         logging.error("Invalid key: User not found or other error.")
         return jsonify({'message': 'Invalid key.'}), 401
+
+@app.route('/.well-known/pki-validation/AD0BC09FA8522B69AEBE92FE99C5DF60.txt')
+def serve_validation_file():
+    return app.send_static_file('.well-known/pki-validation/AD0BC09FA8522B69AEBE92FE99C5DF60.txt')
+
+@app.route('/.well-known/acme-challenge/BufOtF6i7arS1FB_55sZG1v9o2nUZemXkrjBiHNwxrA')
+def serve_validation_file1():
+    return app.send_static_file('.well-known/acme-challenge/BufOtF6i7arS1FB_55sZG1v9o2nUZemXkrjBiHNwxrA')
+
+
 
 def run_inference(image_path):
     model = YOLO("runs/detect/train/yolov8s_100epochs/weights/best.pt")
