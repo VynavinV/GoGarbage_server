@@ -14,9 +14,9 @@ from geopy.distance import geodesic  # Add geodesic import for distance calculat
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Add a secret key for session management
 
-SUPABASE_URL = 'https://urdpxgmczkokojlhtynd.supabase.co'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyZHB4Z21jemtva29qbGh0eW5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0MDg3NDEsImV4cCI6MjA1NDk4NDc0MX0.l0C2lLSrvGRJZEmjgqk3FDj3i17Cmby_buI5FLzsrUg'
-CENTRAL_WALLET_PRIVATE_KEY = '86014fa7a3efecfb521600b55616e4aca9ad754de7772e4ea6a9c93da7889602'
+SUPABASE_URL = 'https://***********.supabase.co'
+SUPABASE_KEY = '*************************'
+CENTRAL_WALLET_PRIVATE_KEY = '*******************************'
 CENTRAL_WALLET_ADDRESS = '86014fa7a3efecfb521600b55616e4aca9ad754de7772e4ea6a9c93da7889602'
 
 logging.basicConfig(level=logging.DEBUG)
