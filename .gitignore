@@ -8,8 +8,9 @@ logs/
 *.log
 *.log.*
 
-# Environment variables
+# Environment variables and secrets
 .env
+client_secret.json
 
 # OS generated files
 .DS_Store
